@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LeetCode Solver Hub | Personal Solution Tracker",
+  title: "My Code Vault | Personal Solution Tracker",
   description: "A premium, dark-mode personal dashboard to track and optimize your LeetCode algorithm solutions with dual-pane code viewing and Monaco editor.",
   keywords: ["LeetCode", "Algorithm", "Coding", "Software Engineering", "Monaco Editor", "Solutions Tracker"],
 };
@@ -47,8 +47,8 @@ export default function RootLayout({
                 <Code2 className="h-5 w-5" />
               </div>
               <div>
-                <span className="font-mono text-xs font-semibold tracking-widest text-sky-600 uppercase">LeetCode</span>
-                <h1 className="text-sm font-bold tracking-tight text-zinc-900 sm:text-base -mt-1 font-mono">Solver Hub</h1>
+                <span className="font-mono text-xs font-semibold tracking-widest text-sky-600 uppercase">Personal</span>
+                <h1 className="text-sm font-bold tracking-tight text-zinc-900 sm:text-base -mt-1 font-mono">My Code Vault</h1>
               </div>
             </Link>
 
