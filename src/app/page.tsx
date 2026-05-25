@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { Problem, NewProblemPayload } from '@/lib/types';
-import AddProblemModal from '@/components/AddProblemModal';
-import { 
-  Plus, 
-  Search, 
-  BookOpen, 
-  Flame, 
-  TrendingUp, 
-  Award, 
-  ChevronRight, 
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { Problem, NewProblemPayload } from "@/lib/types";
+import AddProblemModal from "@/components/AddProblemModal";
+import {
+  Plus,
+  Search,
+  BookOpen,
+  Flame,
+  TrendingUp,
+  Award,
+  ChevronRight,
   Calendar,
   Layers,
   Sparkles,
   Loader2,
-  Trash2
-} from 'lucide-react';
+  Trash2,
+} from "lucide-react";
 
 export default function Dashboard() {
   const router = useRouter();
   const [problems, setProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState<string>('All');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -38,15 +38,17 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('problems')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("problems")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setProblems(data || []);
     } catch (err: any) {
-      console.error('Error fetching problems:', err);
-      setErrorMessage(err?.message || 'Could not fetch problems from Supabase.');
+      console.error("Error fetching problems:", err);
+      setErrorMessage(
+        err?.message || "Could not fetch problems from Supabase.",
+      );
     } finally {
       setLoading(false);
     }
@@ -56,34 +58,41 @@ export default function Dashboard() {
     try {
       // 1. Insert the problem record
       const { data, error } = await supabase
-        .from('problems')
-        .insert([{
-          title: newProblem.title,
-          difficulty: newProblem.difficulty,
-          description: newProblem.description,
-          leetcode_slug: newProblem.leetcode_slug || null,
-        }])
+        .from("problems")
+        .insert([
+          {
+            title: newProblem.title,
+            difficulty: newProblem.difficulty,
+            description: newProblem.description,
+            leetcode_slug: newProblem.leetcode_slug || null,
+          },
+        ])
         .select()
         .single();
 
       if (error) {
-        throw new Error(error.message || 'Database insert failed.');
+        throw new Error(error.message || "Database insert failed.");
       }
 
       if (data) {
         // 2. Auto-create the first code solution tab if language was chosen
         if (newProblem.initialLanguage && newProblem.initialCode) {
           const { error: solError } = await supabase
-            .from('code_solutions')
-            .insert([{
-              problem_id: data.id,
-              title: `${newProblem.initialLanguage.charAt(0).toUpperCase() + newProblem.initialLanguage.slice(1)} Solution`,
-              language: newProblem.initialLanguage,
-              code: newProblem.initialCode,
-            }]);
+            .from("code_solutions")
+            .insert([
+              {
+                problem_id: data.id,
+                title: `${newProblem.initialLanguage.charAt(0).toUpperCase() + newProblem.initialLanguage.slice(1)} Solution`,
+                language: newProblem.initialLanguage,
+                code: newProblem.initialCode,
+              },
+            ]);
 
           if (solError) {
-            console.error('Warning: Could not create initial code tab:', solError.message);
+            console.error(
+              "Warning: Could not create initial code tab:",
+              solError.message,
+            );
             // Non-fatal — still navigate to problem
           }
         }
@@ -92,42 +101,57 @@ export default function Dashboard() {
         router.push(`/problem/${data.id}`);
       }
     } catch (err: any) {
-      console.error('Error creating problem:', err);
+      console.error("Error creating problem:", err);
       throw err; // propagates to the modal form error handler
     }
   };
 
-  const handleDeleteProblem = async (e: React.MouseEvent, id: string, title: string) => {
+  const handleDeleteProblem = async (
+    e: React.MouseEvent,
+    id: string,
+    title: string,
+  ) => {
     e.stopPropagation();
-    if (!window.confirm(`Are you sure you want to permanently delete "${title}" and all its solutions?`)) return;
-    
+    if (
+      !window.confirm(
+        `Are you sure you want to permanently delete "${title}" and all its solutions?`,
+      )
+    )
+      return;
+
     try {
-      const { error } = await supabase.from('problems').delete().eq('id', id);
+      const { error } = await supabase.from("problems").delete().eq("id", id);
       if (error) throw error;
-      setProblems(prev => prev.filter(p => p.id !== id));
+      setProblems((prev) => prev.filter((p) => p.id !== id));
     } catch (err: any) {
-      console.error('Delete failed:', err);
-      alert('Failed to delete problem: ' + err?.message);
+      console.error("Delete failed:", err);
+      alert("Failed to delete problem: " + err?.message);
     }
   };
 
   // Filter problems based on search term and difficulty
   const filteredProblems = problems.filter((problem) => {
-    const matchesSearch = problem.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          problem.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = difficultyFilter === 'All' || problem.difficulty === difficultyFilter;
+    const matchesSearch =
+      problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      problem.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDifficulty =
+      difficultyFilter === "All" || problem.difficulty === difficultyFilter;
     return matchesSearch && matchesDifficulty;
   });
 
   // Calculate statistics
   const totalCount = problems.length;
-  const easyCount = problems.filter(p => p.difficulty === 'Easy').length;
-  const mediumCount = problems.filter(p => p.difficulty === 'Medium').length;
-  const hardCount = problems.filter(p => p.difficulty === 'Hard').length;
+  const easyCount = problems.filter((p) => p.difficulty === "Easy").length;
+  const mediumCount = problems.filter((p) => p.difficulty === "Medium").length;
+  const hardCount = problems.filter((p) => p.difficulty === "Hard").length;
 
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   return (
@@ -136,16 +160,22 @@ export default function Dashboard() {
       <section className="relative overflow-hidden rounded-3xl hud-panel px-6 py-8 sm:px-12 sm:py-10 shadow-2xl">
         <div className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
         <div className="absolute -left-24 -bottom-24 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl" />
-        
+
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-400 border border-indigo-500/15">
               <Sparkles className="h-3 w-3" />
               Developer Workspace
             </div>
-            <h2 className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl glitch-text" data-text="LeetCode Solution Matrix">LeetCode Solution Matrix</h2>
+            <h2
+              className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl glitch-text"
+              data-text="LeetCode Solution Matrix"
+            >
+              My Code Vault
+            </h2>
             <p className="max-w-xl text-sm text-zinc-400">
-              Analyze algorithms, document complexities, and construct beautiful multi-language implementations.
+              Analyze algorithms, document complexities, and construct beautiful
+              multi-language implementations.
             </p>
           </div>
           <div>
@@ -161,10 +191,15 @@ export default function Dashboard() {
       </section>
 
       {/* Stats Counter Row */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4" aria-label="LeetCode statistics">
+      <section
+        className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        aria-label="LeetCode statistics"
+      >
         <div className="rounded-2xl hud-panel p-5 transition-all hover:border-cyan-500/30 hover:scale-[1.02]">
           <div className="flex items-center justify-between text-zinc-500 mb-1">
-            <span className="text-xs font-medium uppercase tracking-wider">Total Saved</span>
+            <span className="text-xs font-medium uppercase tracking-wider">
+              Total Saved
+            </span>
             <BookOpen className="h-4 w-4 text-indigo-400" />
           </div>
           <p className="text-2xl font-extrabold text-zinc-900">{totalCount}</p>
@@ -172,23 +207,33 @@ export default function Dashboard() {
 
         <div className="rounded-2xl hud-panel p-5 transition-all hover:border-cyan-500/30 hover:scale-[1.02]">
           <div className="flex items-center justify-between text-zinc-650 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Easy Solved</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Easy Solved
+            </span>
             <Flame className="h-4 w-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-extrabold text-emerald-600">{easyCount}</p>
+          <p className="text-2xl font-extrabold text-emerald-600">
+            {easyCount}
+          </p>
         </div>
 
         <div className="rounded-2xl hud-panel p-5 transition-all hover:border-cyan-500/30 hover:scale-[1.02]">
           <div className="flex items-center justify-between text-zinc-650 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Medium Solved</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Medium Solved
+            </span>
             <TrendingUp className="h-4 w-4 text-amber-600" />
           </div>
-          <p className="text-2xl font-extrabold text-amber-600">{mediumCount}</p>
+          <p className="text-2xl font-extrabold text-amber-600">
+            {mediumCount}
+          </p>
         </div>
 
         <div className="rounded-2xl hud-panel p-5 transition-all hover:border-cyan-500/30 hover:scale-[1.02]">
           <div className="flex items-center justify-between text-zinc-650 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Hard Solved</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Hard Solved
+            </span>
             <Award className="h-4 w-4 text-red-650" />
           </div>
           <p className="text-2xl font-extrabold text-red-650">{hardCount}</p>
@@ -196,7 +241,10 @@ export default function Dashboard() {
       </section>
 
       {/* Filter and Search Section */}
-      <section className="flex flex-col sm:flex-row items-center gap-4 hud-panel p-4 rounded-2xl" aria-label="Search and filter problems">
+      <section
+        className="flex flex-col sm:flex-row items-center gap-4 hud-panel p-4 rounded-2xl"
+        aria-label="Search and filter problems"
+      >
         <div className="relative w-full sm:flex-1">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
           <input
@@ -208,14 +256,14 @@ export default function Dashboard() {
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto py-1">
-          {(['All', 'Easy', 'Medium', 'Hard'] as const).map((filter) => (
+          {(["All", "Easy", "Medium", "Hard"] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => setDifficultyFilter(filter)}
               className={`rounded-xl px-4 py-2 text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${
                 difficultyFilter === filter
-                  ? 'bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/10'
-                  : 'bg-zinc-950 border border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-white'
+                  ? "bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/10"
+                  : "bg-zinc-950 border border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-white"
               }`}
             >
               {filter}
@@ -227,20 +275,28 @@ export default function Dashboard() {
       {/* Database Error Warnings */}
       {errorMessage && (
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-5 text-sm text-amber-400 space-y-2">
-          <p className="font-semibold text-base text-amber-200">Supabase Connection Notice</p>
+          <p className="font-semibold text-base text-amber-200">
+            Supabase Connection Notice
+          </p>
           <p>{errorMessage}</p>
           <p className="text-xs text-zinc-400 pt-1">
-            Note: If you have not created your tables yet, execute the database migration script in your Supabase SQL editor.
+            Note: If you have not created your tables yet, execute the database
+            migration script in your Supabase SQL editor.
           </p>
         </div>
       )}
 
       {/* Main problems Grid List */}
-      <section className="flex-1 flex flex-col justify-start" aria-label="LeetCode problems list">
+      <section
+        className="flex-1 flex flex-col justify-start"
+        aria-label="LeetCode problems list"
+      >
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-            <p className="text-zinc-400 text-sm font-medium">Synchronizing problem matrix...</p>
+            <p className="text-zinc-400 text-sm font-medium">
+              Synchronizing problem matrix...
+            </p>
           </div>
         ) : filteredProblems.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-zinc-300 py-20 text-center bg-zinc-50/50 shadow-inner space-y-4">
@@ -248,14 +304,16 @@ export default function Dashboard() {
               <Layers className="h-6 w-6 text-indigo-650" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-zinc-900">No problems tracked yet</h3>
+              <h3 className="text-base font-bold text-zinc-900">
+                No problems tracked yet
+              </h3>
               <p className="text-sm text-zinc-650 max-w-sm mx-auto leading-relaxed">
-                {searchTerm || difficultyFilter !== 'All' 
-                  ? 'No results match your search query or filters. Clear the search and try again!'
-                  : 'Get started by creating your very first tracked LeetCode challenge right now!'}
+                {searchTerm || difficultyFilter !== "All"
+                  ? "No results match your search query or filters. Clear the search and try again!"
+                  : "Get started by creating your very first tracked LeetCode challenge right now!"}
               </p>
             </div>
-            {!searchTerm && difficultyFilter === 'All' && (
+            {!searchTerm && difficultyFilter === "All" && (
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 px-4.5 py-2.5 text-xs font-bold text-zinc-700 transition-colors shadow-sm cursor-pointer"
@@ -276,18 +334,21 @@ export default function Dashboard() {
             </div>
             {filteredProblems.map((problem) => {
               const dateText = formatDate(problem.created_at);
-              let difficultyClass = '';
-              let glowClass = '';
-              
-              if (problem.difficulty === 'Easy') {
-                difficultyClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/60 font-bold';
-                glowClass = 'glow-card-easy';
-              } else if (problem.difficulty === 'Medium') {
-                difficultyClass = 'bg-amber-50 text-amber-800 border-amber-200/60 font-bold';
-                glowClass = 'glow-card-medium';
+              let difficultyClass = "";
+              let glowClass = "";
+
+              if (problem.difficulty === "Easy") {
+                difficultyClass =
+                  "bg-emerald-50 text-emerald-700 border-emerald-200/60 font-bold";
+                glowClass = "glow-card-easy";
+              } else if (problem.difficulty === "Medium") {
+                difficultyClass =
+                  "bg-amber-50 text-amber-800 border-amber-200/60 font-bold";
+                glowClass = "glow-card-medium";
               } else {
-                difficultyClass = 'bg-red-50 text-red-750 border-red-200/60 font-bold';
-                glowClass = 'glow-card-hard';
+                difficultyClass =
+                  "bg-red-50 text-red-750 border-red-200/60 font-bold";
+                glowClass = "glow-card-hard";
               }
 
               return (
@@ -298,7 +359,9 @@ export default function Dashboard() {
                 >
                   {/* Mobile Top Line (Hidden on desktop) */}
                   <div className="flex items-center justify-between md:hidden mb-3">
-                    <span className={`rounded-lg border px-2.5 py-0.5 text-xs font-semibold ${difficultyClass}`}>
+                    <span
+                      className={`rounded-lg border px-2.5 py-0.5 text-xs font-semibold ${difficultyClass}`}
+                    >
                       {problem.difficulty}
                     </span>
                     <div className="flex items-center gap-1 text-xs text-zinc-500">
@@ -313,13 +376,16 @@ export default function Dashboard() {
                       {problem.title}
                     </h3>
                     <p className="line-clamp-2 md:line-clamp-1 text-xs text-zinc-600 leading-relaxed font-sans pr-4">
-                      {problem.description || 'No explanation or algorithm notes written yet.'}
+                      {problem.description ||
+                        "No explanation or algorithm notes written yet."}
                     </p>
                   </div>
 
                   {/* Desktop Columns for Difficulty & Date */}
                   <div className="hidden md:flex md:col-span-2 items-center">
-                    <span className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${difficultyClass}`}>
+                    <span
+                      className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${difficultyClass}`}
+                    >
                       {problem.difficulty}
                     </span>
                   </div>
@@ -330,10 +396,14 @@ export default function Dashboard() {
 
                   {/* Bottom link button */}
                   <div className="flex items-center justify-between pt-4 mt-4 border-t border-zinc-100 md:col-span-2 md:border-t-0 md:pt-0 md:mt-0 md:justify-end gap-2">
-                    <span className="text-xs font-mono text-zinc-500 md:hidden">Workspace Active</span>
+                    <span className="text-xs font-mono text-zinc-500 md:hidden">
+                      Workspace Active
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={(e) => handleDeleteProblem(e, problem.id, problem.title)}
+                        onClick={(e) =>
+                          handleDeleteProblem(e, problem.id, problem.title)
+                        }
                         className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete Problem"
                       >
@@ -361,4 +431,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
