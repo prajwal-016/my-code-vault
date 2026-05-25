@@ -49,14 +49,14 @@ export default function SecretKnockLogin() {
     if (newTaps.length === 4) {
       const tapString = newTaps.map(t => `${t[0]},${t[1]}`).join('|');
       
-      if (tapString === SECRET_COMBINATION) {
-        // Vault access granted
-        document.cookie = "vault_access_granted=true; path=/; max-age=86400; SameSite=Strict";
-        router.push('/');
-      } else {
+      // if (tapString === SECRET_COMBINATION) {
+      //   // Vault access granted
+      //   document.cookie = "vault_access_granted=true; path=/; max-age=86400; SameSite=Strict";
+      //   router.push('/');
+      // } else {
         // Silently reset without alerting the intruder
-        setTaps([]);
-      }
+      setTaps([]);
+      // }
     } else {
       setTaps(newTaps);
     }
