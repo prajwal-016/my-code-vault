@@ -169,7 +169,7 @@ export default function Dashboard() {
             </div>
             <h2
               className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl glitch-text"
-              data-text="My Code Matrix"
+              data-text="My Code Vault"
             >
               My Code Vault
             </h2>
