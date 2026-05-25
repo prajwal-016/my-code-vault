@@ -97,7 +97,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteProblem = async (e: React.MouseEvent, id: number, title: string) => {
+  const handleDeleteProblem = async (e: React.MouseEvent, id: string, title: string) => {
     e.stopPropagation();
     if (!window.confirm(`Are you sure you want to permanently delete "${title}" and all its solutions?`)) return;
     
